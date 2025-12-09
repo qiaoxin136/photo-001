@@ -103,7 +103,7 @@ function App() {
 
   const handleUserName = async () => {
     const name = await checkLoginAndGetName();
-    console.log((name));
+    //console.log((name));
     if (name) {
       setUserName(name)
     }
@@ -123,7 +123,8 @@ function App() {
     handleUserName();
     //console.log(typeof userName);
     //console.log("Username:", userName);
-    const name=userName || "Anonymous";
+    const name=userName
+    console.log(name);
     client.models.Location.create({
       date: date,
       time: time,
