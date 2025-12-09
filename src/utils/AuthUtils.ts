@@ -3,9 +3,10 @@ import { fetchUserAttributes } from 'aws-amplify/auth';
 export async function checkLoginAndGetName(): Promise<string | undefined>{
     try {
         const attributes = await fetchUserAttributes();
-        if (attributes.nickname) {
-            return attributes.nickname
+        if (attributes.email) {
+            return attributes.email
         } else {
+            //console.log(attributes);
             return 'Someone'
         }
     } catch (error) {

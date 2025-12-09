@@ -36,19 +36,19 @@ type SelectOption = {
 };
 
 function App() {
-  
+
   const { signOut } = useAuthenticator();
   const client = generateClient<Schema>();
   const [location, setLocation] = useState<Array<Schema["Location"]["type"]>>([]);
 
   const [date, setDate] = useState("");
-  const [time, setTime]=useState("");
+  const [time, setTime] = useState("");
   //const [report, setReport] = useState("");
   const [track, setTrack] = useState<number>();
   const [type, setType] = useState<string>("water");
-  const [diameter, setDiameter]=useState<number>();
-  const [userName, setUserName]=useState<string>("");
-  const [description, setDescription]=useState<string>("");
+  const [diameter, setDiameter] = useState<number>();
+  const [userName, setUserName] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
   //const [lat, setLat] = useState(0);
   //const [lng, setLng] = useState(0);
 
@@ -60,7 +60,7 @@ function App() {
     { value: 'water', label: 'Water' },
     { value: 'wastewater', label: 'Wastewater' },
     { value: 'stormwater', label: 'Stormwater' },
-    { value: 'pavement', label: 'Pavement'}
+    { value: 'pavement', label: 'Pavement' }
   ];
 
 
@@ -78,7 +78,7 @@ function App() {
   //   { value: '42', label: '42' },
   // ]; 
 
-  
+
   const handleDate = (e: ChangeEvent<HTMLInputElement>) => {
     setDate(e.target.value);
   };
@@ -88,7 +88,7 @@ function App() {
   };
 
   const handleTrack = (e: ChangeEvent<HTMLInputElement>) => {
-   setTrack(parseInt(e.target.value));
+    setTrack(parseInt(e.target.value));
   };
 
   const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -99,18 +99,18 @@ function App() {
 
   const handleDiameter = (e: ChangeEvent<HTMLInputElement>) => {
     setDiameter(parseInt(e.target.value));
-   }
+  }
 
-   const handleUserName = async () => {
-            const name = await checkLoginAndGetName();
-            if (name) {
-                setUserName(name)
-            }
-        }
+  const handleUserName = async () => {
+    const name = await checkLoginAndGetName();
+    if (name) {
+      setUserName(name)
+    }
+  }
 
-   const handleDescription = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleDescription = (e: ChangeEvent<HTMLInputElement>) => {
     setDescription(e.target.value);
-   }
+  }
 
   useEffect(() => {
     client.models.Location.observeQuery().subscribe({
@@ -119,7 +119,21 @@ function App() {
   }, []);
 
   function createLocation() {
-    client.models.Location.create({ /* content: window.prompt("Todo content") */ });
+    handleUserName();
+    //console.log("Username:", userName);
+    client.models.Location.create({
+      date: date,
+      time: time,
+      track: track,
+      type: type,
+      diameter: diameter,
+      username: userName, 
+      description: description,
+
+      // lat: lat,
+      // lng: lng,
+
+    });
   }
 
   function deleteLocation(id: string) {
@@ -130,7 +144,7 @@ function App() {
   return (
     <main>
       <h1>Lift Station A-19 Force Main Replacement Project</h1>
-        <Divider orientation="horizontal" />
+      <Divider orientation="horizontal" />
       <br />
       <Flex>
         <Button onClick={signOut} width={120}>
@@ -148,28 +162,28 @@ function App() {
           value={date}
           placeholder="date"
           onChange={handleDate}
-          //width="150%"
+        //width="150%"
         />
-         <input
+        <input
           type="time"
           value={time}
           placeholder="time"
           onChange={handleTime}
-          //width="150%"
+        //width="150%"
         />
-         <input
+        <input
           type="number"
           value={track}
           placeholder="track"
           onChange={handleTrack}
-          //width="150%"
+        //width="150%"
         />
         <SelectField
           label="Select an option"
           labelHidden={true}
           value={type}
           onChange={handleSelectChange}
-          //width="100%"
+        //width="100%"
         >
           {options.map((option) => (
             <option key={option.value} value={option.value}>
@@ -184,24 +198,24 @@ function App() {
           value={diameter}
           placeholder="diameter"
           onChange={handleDiameter}
-          //width="150%"
+        //width="150%"
         />
 
-        <input
+        {/*         <input
           type="text"
           value={userName}
           placeholder="username"
           onChange={handleUserName}
           //width="150%"
-        />
+        /> */}
         <input
           type="text"
           value={description}
           placeholder="description"
           onChange={handleDescription}
-          //width="150%"
+        //width="150%"
         />
-{/*         <Input type="number" value={lat} />
+        {/*         <Input type="number" value={lat} />
         <Input type="number" value={lng} /> */}
       </Flex>
       <Divider orientation="horizontal" />
