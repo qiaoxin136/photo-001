@@ -139,6 +139,7 @@ function App() {
   const [track, setTrack] = useState<number>();
   const [type, setType] = useState<string>("water");
   const [diameter, setDiameter] = useState<number>();
+  const [length, setLength] = useState<number>();
   const [userName, setUserName] = useState<string>();
   const [description, setDescription] = useState<string>("");
   const [lat, setLat] = useState(0);
@@ -391,6 +392,10 @@ function App() {
     setDiameter(parseInt(e.target.value));
   }
 
+  const handleLength = (e: ChangeEvent<HTMLInputElement>) => {
+    setLength(parseInt(e.target.value));
+  }
+
   const handleUserName = async () => {
     const name = await checkLoginAndGetName();
     //console.log((name));
@@ -414,18 +419,21 @@ function App() {
     handleUserName();
   }, []);
 
+
+
   function createLocation() {
     handleUserName();
     //console.log(typeof userName);
     //console.log("Username:", userName);
     const name = userName
-    console.log(name);
+    //console.log(name);
     client.models.Location.create({
       date: date,
       time: time,
       track: track,
       type: type,
       diameter: diameter,
+      length: length,
       username: name,
       description: description,
 
@@ -653,8 +661,15 @@ function App() {
         <input
           type="number"
           value={diameter}
-          placeholder="diameter"
+          placeholder="diameter (in)"
           onChange={handleDiameter}
+        //width="150%"
+        />
+        <input
+          type="number"
+          value={length}
+          placeholder="length (ft)"
+          onChange={handleLength}
         //width="150%"
         />
         <input
@@ -792,6 +807,7 @@ function App() {
                         <TableCell as="th" /* style={{ width: '15%' }} */>Type</TableCell>
                         <TableCell as="th" /* style={{ width: '15%' }} */>User</TableCell>
                         <TableCell as="th" /* style={{ width: '15%' }} */>Diameter</TableCell>
+                        <TableCell as="th" /* style={{ width: '15%' }} */>Length</TableCell>
                         <TableCell as="th" /* style={{ width: '15%' }} */>Latitude</TableCell>
                         <TableCell as="th" /* style={{ width: '15%' }} */>Longitude</TableCell>
                       </TableRow>
@@ -807,6 +823,7 @@ function App() {
                             <TableCell /* width="15%" */>{location.type}</TableCell>
                             <TableCell /* width="15%" */>{location.username}</TableCell>
                             <TableCell /* width="15%" */>{location.diameter}</TableCell>
+                            <TableCell /* width="15%" */>{location.length}</TableCell>
 
                           </TableRow>
                         ))}
