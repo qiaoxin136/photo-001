@@ -121,22 +121,23 @@ function App() {
 
   function createLocation() {
     handleUserName();
-    console.log(typeof userName);
-    console.log("Username:", userName);
+    //console.log(typeof userName);
+    //console.log("Username:", userName);
+    const name=userName || "Anonymous";
     client.models.Location.create({
       date: date,
       time: time,
       track: track,
       type: type,
       diameter: diameter,
-      username: userName, 
+      username: name,
       description: description,
 
       // lat: lat,
       // lng: lng,
 
     });
-     setDate("");
+    setDate("");
     setTime("");
     setTrack(track);
     setType(type);
