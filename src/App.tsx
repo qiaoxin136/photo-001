@@ -131,6 +131,10 @@ function App() {
     });
   }, []);
 
+  useEffect(() => {
+    handleUserName();
+     }, []);
+
   function createLocation() {
     handleUserName();
     //console.log(typeof userName);
