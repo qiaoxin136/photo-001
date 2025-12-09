@@ -10,24 +10,51 @@ import {
   //Input,
   Flex,
   Button,
-  //Table,
-  //TableBody,
-  //TableHead,
-  //TableCell,
-  //TableRow,
-  //ThemeProvider,
-  //Theme,
+  Table,
+  TableBody,
+  TableHead,
+  TableCell,
+  TableRow,
+  ThemeProvider,
+  Theme,
   Divider,
-  //ScrollView,
-  //Tabs,
+  Tabs,
   SelectField,
+  ScrollView,
   //CheckboxField,
   // TextField,
 } from "@aws-amplify/ui-react";
 
 import "@aws-amplify/ui-react/styles.css";
 
+const theme: Theme = {
+  name: "table-theme",
+  tokens: {
+    components: {
+      table: {
+        row: {
+          hover: {
+            backgroundColor: { value: "{colors.blue.20}" },
+          },
 
+          striped: {
+            backgroundColor: { value: "{colors.orange.10}" },
+          },
+        },
+
+        header: {
+          color: { value: "{colors.blue.80}" },
+          fontSize: { value: "{fontSizes.x3}" },
+          borderColor: { value: "{colors.blue.20}" },
+        },
+
+        data: {
+          fontWeight: { value: "{fontWeights.semibold}" },
+        },
+      },
+    },
+  },
+};
 
 
 type SelectOption = {
@@ -47,12 +74,12 @@ function App() {
   const [track, setTrack] = useState<number>();
   const [type, setType] = useState<string>("water");
   const [diameter, setDiameter] = useState<number>();
-  const [userName, setUserName] = useState<string>("");
+  const [userName, setUserName] = useState<string>();
   const [description, setDescription] = useState<string>("");
   //const [lat, setLat] = useState(0);
   //const [lng, setLng] = useState(0);
 
-  //const [tab, setTab] = useState("1");
+  const [tab, setTab] = useState("1");
 
   //const [checked, setChecked] = useState<boolean>(false);
 
@@ -62,22 +89,6 @@ function App() {
     { value: 'stormwater', label: 'Stormwater' },
     { value: 'pavement', label: 'Pavement' }
   ];
-
-
-
-  //  const options3: SelectOption[] = [
-  //   { value: '6', label: '6' },
-  //   { value: '8', label: '8' },
-  //   { value: '10', label: '10' },
-  //   { value: '12', label: '12' },
-  //   { value: '15', label: '15' },
-  //   { value: '18', label: '18' },
-  //   { value: '24', label: '24' },
-  //   { value: '30', label: '30' },
-  //   { value: '36', label: '36' },
-  //   { value: '42', label: '42' },
-  // ]; 
-
 
   const handleDate = (e: ChangeEvent<HTMLInputElement>) => {
     setDate(e.target.value);
@@ -114,6 +125,7 @@ function App() {
   }
 
   useEffect(() => {
+    
     client.models.Location.observeQuery().subscribe({
       next: (data) => setLocation([...data.items]),
     });
@@ -123,7 +135,7 @@ function App() {
     handleUserName();
     //console.log(typeof userName);
     //console.log("Username:", userName);
-    const name=userName
+    const name = userName
     console.log(name);
     client.models.Location.create({
       date: date,
@@ -213,14 +225,6 @@ function App() {
           onChange={handleDiameter}
         //width="150%"
         />
-
-        {/*         <input
-          type="text"
-          value={userName}
-          placeholder="username"
-          onChange={handleUserName}
-          //width="150%"
-        /> */}
         <input
           type="text"
           value={description}
@@ -233,14 +237,81 @@ function App() {
       </Flex>
       <Divider orientation="horizontal" />
       <br />
-      <ul>
-        {location.map(location => <li
-          onClick={() => deleteLocation(location.id)}
-          key={location.id}>
-          {location.date}
-        </li>)}
-      </ul>
+      <Tabs
+        value={tab}
+        onValueChange={(tab) => setTab(tab)}
+        items={[
+          {
+            label: "History Map",
+            value: "1",
+            content: (<>
+            
+            </>)
+          }, 
+          {
+            label: "History Data",
+            value: "2",
+            content: (<>
+              <ScrollView
+                  as="div"
+                  ariaLabel="View example"
+                  backgroundColor="var(--amplify-colors-white)"
+                  borderRadius="6px"
+                  //border="1px solid var(--amplify-colors-black)"
+                  // boxShadow="3px 3px 5px 6px var(--amplify-colors-neutral-60)"
+                  color="var(--amplify-colors-blue-60)"
+                  // height="45rem"
+                  // maxWidth="100%"
+                  padding="1rem"
+                // width="100%"
+                // width="1000px"
+                // height={"2400px"}
+                // maxHeight={"2400px"}
+                // maxWidth="1000px"
 
+                >
+                  <ThemeProvider theme={theme} colorMode="light">
+                    <Table caption="" highlightOnHover={false} variation="striped"
+                      style={{
+                        //tableLayout: 'fixed',
+                        width: '100%',
+                        fontFamily: 'Arial, sans-serif',
+                      }}>
+                      <TableHead>
+                        <TableRow>
+                           <TableCell as="th" /* style={{ width: '15%' }} */>Date</TableCell>
+                          <TableCell as="th" /* style={{ width: '15%' }} */>Time</TableCell>
+                          <TableCell as="th" /* style={{ width: '10%' }} */>Track</TableCell>
+                          <TableCell as="th" /* style={{ width: '15%' }} */>Type</TableCell>
+                           <TableCell as="th" /* style={{ width: '15%' }} */>User</TableCell>
+                           <TableCell as="th" /* style={{ width: '15%' }} */>Diameter</TableCell>
+                          <TableCell as="th" /* style={{ width: '15%' }} */>Latitude</TableCell>
+                          <TableCell as="th" /* style={{ width: '15%' }} */>Longitude</TableCell>
+                        </TableRow>
+                        <TableBody>
+                          {location.map((location) => (
+                            <TableRow
+                              onClick={() => deleteLocation(location.id)}
+                              key={location.id}
+                            >
+                             <TableCell /* width="15%" */>{location.date}</TableCell>
+                              <TableCell /* width="15%" */>{location.time}</TableCell>
+                              <TableCell /* width="10%" */>{location.track}</TableCell>
+                              <TableCell /* width="15%" */>{location.type}</TableCell>
+                              <TableCell /* width="15%" */>{location.username}</TableCell>
+                              <TableCell /* width="15%" */>{location.diameter}</TableCell>
+
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </TableHead>
+                    </Table>
+                  </ThemeProvider>
+                </ScrollView>
+            </>)
+          },
+        ]}
+      />
 
     </main>
   );
