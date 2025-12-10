@@ -1,4 +1,4 @@
-import type { ChangeEvent, SyntheticEvent  } from "react";
+import type { ChangeEvent, SyntheticEvent } from "react";
 import { useEffect, useState } from "react";
 import type { Schema } from "../amplify/data/resource";
 import { checkLoginAndGetName } from "./utils/AuthUtils";
@@ -555,54 +555,55 @@ function App() {
 
   }
 
-  async function handleUpload(event: SyntheticEvent,id: string) {
-        event.preventDefault();
+  async function handleSubmit(event: SyntheticEvent, id: string) {
+    event.preventDefault();
+    console.log(id);
+    console.log(userName);
 
-        if(userName) {
-            let placePhotosUrls: string[] = [];
-
-            if (placePhotos) {
-                const uploadResult = await uploadPhotos(placePhotos)
-                placePhotosUrls = uploadResult.urls;
-               
-            }
-
-            await client.models.Location.update({
-                id: id,
-                photos: placePhotosUrls,
-
-            })
+    if (userName) {
+      let placePhotosUrls: string[] = [];
+      //console.log(placePhotos);
+      const uploadResult = await uploadPhotos(placePhotos)
+      placePhotosUrls = uploadResult.urls;
 
 
-            clearFields();
-        }
+
+      await client.models.Location.update({
+        id: id,
+        photos: placePhotosUrls,
+
+      })
+
+
+      clearFields();
     }
+  }
 
-    function clearFields() {
-        //setuserName('');
-        setPlacePhotos([]);
+  function clearFields() {
+    //setuserName('');
+    setPlacePhotos([]);
+  }
+
+  async function uploadPhotos(files: File[]): Promise<{
+    urls: string[]
+
+  }> {
+    const urls: string[] = [];
+
+    for (const file of files) {
+      console.log(`uploading file ${file.name}`)
+      const result = await uploadData({
+        data: file,
+        path: `originals/${file.name}`
+      }).result
+      urls.push(result.path);
+
     }
+    return {
+      urls,
 
-    async function uploadPhotos(files: File[]): Promise<{
-        urls: string[]
-
-    }> {
-        const urls: string[] = [];
- 
-        for (const file of files) {
-            console.log(`uploading file ${file.name}`)
-            const result = await uploadData({
-                data: file,
-                path: `originals/${file.name}`
-            }).result
-            urls.push(result.path);
-  
-        }
-        return {
-            urls,
-         
-        };
-    }
+    };
+  }
 
 
 
@@ -721,12 +722,13 @@ function App() {
                     anchor="bottom"
                     onClose={() => setShowPopup(false)}
                   >
+                    {clickInfo.properties.id} <br />
                     {clickInfo.properties.date} <br />
                     {clickInfo.properties.track} <br />
                     {clickInfo.properties.type} <br />
                     <Button
                       onClick={() => {
-                        console.log(clickInfo);
+                        //console.log(clickInfo);
                         deleteLocation(clickInfo.properties.id);
                         setShowPopup(false);
                       }}
@@ -734,13 +736,19 @@ function App() {
                       Delete{" "}
                     </Button>
                     <br />
+                    <br />
+
+
+                    <label>Place photos:</label><br />
+                    <input type="file" multiple /><br />
                     <Button
-                      onClick={(e)=>{
-                        handleUpload(e, clickInfo.properties.id);
+                      onClick={(e) => {
+                        //console.log(clickInfo.properties.id);
+                        handleSubmit(e, clickInfo.properties.id);
                         setShowPopup(false);
                       }}
-                      >
-                      Upload Photo
+                    >
+                      Upload
                     </Button>
                   </Popup>
                 )}
