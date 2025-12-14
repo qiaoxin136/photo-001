@@ -692,8 +692,9 @@ async function deleteLocation(id: string) {
               if (loc.photos) {
 
                 rows.push(
-                  <h4>Date: {loc.date}  &nbsp; &nbsp;&nbsp; Time: {loc.time} 
+                  <h4>Date: {loc.date}  &nbsp; &nbsp;&nbsp; Description: {loc.description} 
                   &nbsp; &nbsp; &nbsp;Locaton: ( {loc.lat},  {loc.lng} )</h4>)
+                  
                 loc.photos.forEach((photo, idx ) => {
                   if (photo) {
                     rows.push(<StorageImage path={photo} 
