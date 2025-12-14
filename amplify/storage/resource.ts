@@ -5,7 +5,7 @@ export const imagesStorage = defineStorage({
   name: 'images',
   access: (allow) => ({
     'originals/*': [
-      allow.authenticated.to(['write', 'read']),
+      allow.authenticated.to(['write', 'read', 'delete']),
      
     ],
  

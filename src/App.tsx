@@ -5,8 +5,9 @@ import { checkLoginAndGetName } from "./utils/AuthUtils";
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { generateClient } from "aws-amplify/data";
 import "@aws-amplify/ui-react/styles.css";
-import { uploadData } from "aws-amplify/storage";
-//import { StorageImage } from "@aws-amplify/ui-react-storage";
+import { uploadData, remove } from "aws-amplify/storage";
+import { StorageImage } from "@aws-amplify/ui-react-storage";
+
 
 import { MapboxOverlay, MapboxOverlayProps } from "@deck.gl/mapbox/typed";
 import { PickingInfo } from "@deck.gl/core/typed";
@@ -115,6 +116,12 @@ const AIR_PORTS =
 const MAP_STYLE = "https://api.maptiler.com/maps/4dc46e7c-616b-4254-878e-ce7b47876939/style.json?key=tJMfy9mXElbPrO8efC90";
 // "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 
+// Hong's addition
+export type CustomEvent = {
+    target: HTMLInputElement
+}
+// Hong's addition end
+
 function DeckGLOverlay(
   props: MapboxOverlayProps & {
     interleaved?: boolean;
@@ -154,6 +161,8 @@ function App() {
   const [checked, setChecked] = useState<boolean>(false);
 
   //const [checked, setChecked] = useState<boolean>(false);
+
+
 
   const options: SelectOption[] = [
     { value: 'water', label: 'Water' },
@@ -454,8 +463,48 @@ function App() {
     setLng(0);
   }
 
-  function deleteLocation(id: string) {
+  async function deleteLocation2(id: string, photourls: (string|null)[]) :
+    Promise<{ 
+      response: number 
+      info: string
+  }>{
+    console.log('called delete location ')
+    console.log("id=", id)
+    console.log("photourl=", photourls )
+
+    photourls.forEach( 
+            async (aPath) => {
+                if (aPath) 
+                    try{ 
+                       await remove({ path: aPath })
+                    }catch(error) {
+                        console.error('Error deleting photoes:', error);
+                        return {response: 299, info:'failed'}
+                    } 
+            }
+    )
+
+    
     client.models.Location.delete({ id })
+
+    return {response:200, info:'success'};
+    /*
+    const result = await deleteLocationPhotos(id)
+    if (result.response == 200 ) {
+      client.models.Location.delete({ id })
+    }else {
+      console.log(" error to delete photos ")
+    }*/
+  }
+  
+async function deleteLocation(id: string) {
+    const result = await deleteLocationPhotos(id)
+    console.log( "result =", result.response)
+    if (result.response == 200 ) {
+      client.models.Location.delete({ id })
+    }else {
+      console.log(" error to delete photos ")
+    }
   }
 
   function getTooltip(info: PickingInfo) {
@@ -567,7 +616,18 @@ function App() {
       const uploadResult = await uploadPhotos(placePhotos)
       placePhotosUrls = uploadResult.urls;
 
+      const currentLoc= await client.models.Location.get( {
+         id: id
+      })
 
+      let revised:string[] = []
+      if ( currentLoc.data?.photos) {
+         currentLoc.data.photos.forEach( 
+           (d)=>{
+              d? revised.push(d):null
+           }
+         )
+      }
 
       await client.models.Location.update({
         id: id,
@@ -607,6 +667,66 @@ function App() {
   }
 
 
+
+
+  //Hong's addition
+  function previewPhotos(event: CustomEvent) {
+        
+        if (event.target.files) {
+            const eventPhotos = Array.from(event.target.files);
+            //const newFiles: File[] = [...new Set([...eventPhotos, ...placePhotos])]
+            //console.log("newFiles =", newFiles)
+            //setPlacePhotos(newFiles);
+            setPlacePhotos(eventPhotos)
+        }
+  }
+
+
+  function renderPhotos() {
+
+    const rows: any[] = []
+
+        if (location ) {
+
+            location.forEach ( (loc, index) => {
+              if (loc.photos) {
+
+                rows.push(
+                  <h4>Date: {loc.date}  &nbsp; &nbsp;&nbsp; Time: {loc.time} 
+                  &nbsp; &nbsp; &nbsp;Locaton: ( {loc.lat},  {loc.lng} )</h4>)
+                loc.photos.forEach((photo, idx ) => {
+                  if (photo) {
+                    rows.push(<StorageImage path={photo} 
+                      alt={photo} key={index*1000+idx} height={300} 
+                      style={{marginLeft: '10px'}}/>)
+                  }
+                })
+                 
+              }
+            })
+        }
+        return rows;
+    }
+
+  
+    async function deleteLocationPhotos( locId: string): Promise<{
+    response: number 
+    info: string
+    }> {
+         console.log( "Loc Id = " + locId)
+         if (location) {
+            try{ 
+              
+                await remove({ path: `originals/${locId}` })
+            }catch(error) {
+                console.error('Error deleting photoes:', error);
+                return {response: 299, info:'failed'}
+            } 
+          }
+          return {response:200, info:'success'};
+    }
+
+  //end Hong's addition
 
 
   return (
@@ -730,8 +850,8 @@ function App() {
                     {clickInfo.properties.type} <br />
                     <Button
                       onClick={() => {
-                        //console.log(clickInfo);
-                        deleteLocation(clickInfo.properties.id);
+                        console.log("clickinfo =" + clickInfo);
+                        //deleteLocation(clickInfo.properties.id);
                         setShowPopup(false);
                       }}
                     >
@@ -742,10 +862,14 @@ function App() {
 
 
                     <label>Place photos:</label><br />
-                    <input type="file" multiple /><br />
+                    <input type="file" multiple 
+                     onChange={(e) => previewPhotos(e)}
+                     placeholder="new picture"
+                    /><br />
+                    
                     <Button
                       onClick={(e) => {
-                        //console.log(clickInfo.properties.id);
+                        console.log(clickInfo.properties);
                         handleSubmit(e, clickInfo.properties.id);
                         setShowPopup(false);
                       }}
@@ -818,13 +942,24 @@ function App() {
                         <TableCell as="th" /* style={{ width: '15%' }} */>User</TableCell>
                         <TableCell as="th" /* style={{ width: '15%' }} */>Diameter</TableCell>
                         <TableCell as="th" /* style={{ width: '15%' }} */>Length</TableCell>
+                        <TableCell as="th" /* style={{ width: '15%' }} */>Images</TableCell>
                         <TableCell as="th" /* style={{ width: '15%' }} */>Latitude</TableCell>
                         <TableCell as="th" /* style={{ width: '15%' }} */>Longitude</TableCell>
                       </TableRow>
+                      </TableHead>
                       <TableBody>
                         {location.map((location) => (
                           <TableRow
-                            onClick={() => deleteLocation(location.id)}
+                            onDoubleClick={() =>{
+                                console.log( "location photos url =", location.photos)
+                                if ( location.photos)
+                                  deleteLocation2(location.id, location.photos)
+                                else 
+                                  deleteLocation(location.id)
+                            } 
+
+
+                            }
                             key={location.id}
                           >
                             <TableCell /* width="15%" */>{location.date}</TableCell>
@@ -834,11 +969,13 @@ function App() {
                             <TableCell /* width="15%" */>{location.username}</TableCell>
                             <TableCell /* width="15%" */>{location.diameter}</TableCell>
                             <TableCell /* width="15%" */>{location.length}</TableCell>
-
+                            <TableCell /* width="15%" */>{location.photos? location.photos.length:0}</TableCell>
+                            <TableCell /* width="15%" */>{location.lat}</TableCell>
+                            <TableCell /* width="15%" */>{location.lng}</TableCell>  
                           </TableRow>
                         ))}
                       </TableBody>
-                    </TableHead>
+                    
                   </Table>
                 </ThemeProvider>
               </ScrollView>
@@ -849,6 +986,7 @@ function App() {
             value: "3",
             content: (<>
               <h3>Photos and Comments</h3>
+              {renderPhotos()}
 
             </>)
           }
