@@ -761,7 +761,7 @@ async function deleteLocation(id: string) {
         //width="150%"
         />
         <input
-          type="number"
+          type="string"
           value={track}
           placeholder="track"
           onChange={handleTrack}
