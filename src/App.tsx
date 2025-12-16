@@ -1,5 +1,5 @@
 import type { ChangeEvent, SyntheticEvent } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { Schema } from "../amplify/data/resource";
 import { checkLoginAndGetName } from "./utils/AuthUtils";
 import { useAuthenticator } from '@aws-amplify/ui-react';
@@ -118,7 +118,7 @@ const MAP_STYLE = "https://api.maptiler.com/maps/4dc46e7c-616b-4254-878e-ce7b478
 
 // Hong's addition
 export type CustomEvent = {
-    target: HTMLInputElement
+  target: HTMLInputElement
 }
 // Hong's addition end
 
@@ -132,6 +132,11 @@ function DeckGLOverlay(
   overlay && overlay.setProps(props);
   return null;
 }
+
+// for calculate aggregate//
+type ByCategory = Record<string, { count: number; sum: number }>;
+
+// for calculate aggregate end//
 
 
 
@@ -161,6 +166,7 @@ function App() {
   const [checked, setChecked] = useState<boolean>(false);
 
   //const [checked, setChecked] = useState<boolean>(false);
+  const { totalSum, totalCount, byCategory } = useExpenseAggregates();
 
 
 
@@ -463,31 +469,31 @@ function App() {
     setLng(0);
   }
 
-  async function deleteLocation2(id: string, photourls: (string|null)[]) :
-    Promise<{ 
-      response: number 
+  async function deleteLocation2(id: string, photourls: (string | null)[]):
+    Promise<{
+      response: number
       info: string
-  }>{
+    }> {
     console.log('called delete location ')
     console.log("id=", id)
-    console.log("photourl=", photourls )
+    console.log("photourl=", photourls)
 
-    photourls.forEach( 
-            async (aPath) => {
-                if (aPath) 
-                    try{ 
-                       await remove({ path: aPath })
-                    }catch(error) {
-                        console.error('Error deleting photoes:', error);
-                        return {response: 299, info:'failed'}
-                    } 
-            }
+    photourls.forEach(
+      async (aPath) => {
+        if (aPath)
+          try {
+            await remove({ path: aPath })
+          } catch (error) {
+            console.error('Error deleting photoes:', error);
+            return { response: 299, info: 'failed' }
+          }
+      }
     )
 
-    
+
     client.models.Location.delete({ id })
 
-    return {response:200, info:'success'};
+    return { response: 200, info: 'success' };
     /*
     const result = await deleteLocationPhotos(id)
     if (result.response == 200 ) {
@@ -496,13 +502,13 @@ function App() {
       console.log(" error to delete photos ")
     }*/
   }
-  
-async function deleteLocation(id: string) {
+
+  async function deleteLocation(id: string) {
     const result = await deleteLocationPhotos(id)
-    console.log( "result =", result.response)
-    if (result.response == 200 ) {
+    console.log("result =", result.response)
+    if (result.response == 200) {
       client.models.Location.delete({ id })
-    }else {
+    } else {
       console.log(" error to delete photos ")
     }
   }
@@ -616,17 +622,17 @@ async function deleteLocation(id: string) {
       const uploadResult = await uploadPhotos(placePhotos)
       placePhotosUrls = uploadResult.urls;
 
-      const currentLoc= await client.models.Location.get( {
-         id: id
+      const currentLoc = await client.models.Location.get({
+        id: id
       })
 
-      let revised:string[] = []
-      if ( currentLoc.data?.photos) {
-         currentLoc.data.photos.forEach( 
-           (d)=>{
-              d? revised.push(d):null
-           }
-         )
+      let revised: string[] = []
+      if (currentLoc.data?.photos) {
+        currentLoc.data.photos.forEach(
+          (d) => {
+            d ? revised.push(d) : null
+          }
+        )
       }
 
       await client.models.Location.update({
@@ -671,14 +677,14 @@ async function deleteLocation(id: string) {
 
   //Hong's addition
   function previewPhotos(event: CustomEvent) {
-        
-        if (event.target.files) {
-            const eventPhotos = Array.from(event.target.files);
-            //const newFiles: File[] = [...new Set([...eventPhotos, ...placePhotos])]
-            //console.log("newFiles =", newFiles)
-            //setPlacePhotos(newFiles);
-            setPlacePhotos(eventPhotos)
-        }
+
+    if (event.target.files) {
+      const eventPhotos = Array.from(event.target.files);
+      //const newFiles: File[] = [...new Set([...eventPhotos, ...placePhotos])]
+      //console.log("newFiles =", newFiles)
+      //setPlacePhotos(newFiles);
+      setPlacePhotos(eventPhotos)
+    }
   }
 
 
@@ -686,48 +692,85 @@ async function deleteLocation(id: string) {
 
     const rows: any[] = []
 
-        if (location ) {
+    if (location) {
 
-            location.forEach ( (loc, index) => {
-              if (loc.photos) {
+      location.forEach((loc, index) => {
+        if (loc.photos) {
 
-                rows.push(
-                  <h4>Date: {loc.date}  &nbsp; &nbsp;&nbsp; Description: {loc.description} 
-                  &nbsp; &nbsp; &nbsp;Locaton: ( {loc.lat},  {loc.lng} )</h4>)
-                  
-                loc.photos.forEach((photo, idx ) => {
-                  if (photo) {
-                    rows.push(<StorageImage path={photo} 
-                      alt={photo} key={index*1000+idx} height={300} 
-                      style={{marginLeft: '10px'}}/>)
-                  }
-                })
-                 
-              }
-            })
+          rows.push(
+            <h4>Date: {loc.date}  &nbsp; &nbsp;&nbsp; Description: {loc.description}
+              &nbsp; &nbsp; &nbsp;Locaton: ( {loc.lat},  {loc.lng} )</h4>)
+
+          loc.photos.forEach((photo, idx) => {
+            if (photo) {
+              rows.push(<StorageImage path={photo}
+                alt={photo} key={index * 1000 + idx} height={300}
+                style={{ marginLeft: '10px' }} />)
+            }
+          })
+
         }
-        return rows;
+      })
     }
+    return rows;
+  }
 
-  
-    async function deleteLocationPhotos( locId: string): Promise<{
-    response: number 
+
+  async function deleteLocationPhotos(locId: string): Promise<{
+    response: number
     info: string
-    }> {
-         console.log( "Loc Id = " + locId)
-         if (location) {
-            try{ 
-              
-                await remove({ path: `originals/${locId}` })
-            }catch(error) {
-                console.error('Error deleting photoes:', error);
-                return {response: 299, info:'failed'}
-            } 
-          }
-          return {response:200, info:'success'};
+  }> {
+    console.log("Loc Id = " + locId)
+    if (location) {
+      try {
+
+        await remove({ path: `originals/${locId}` })
+      } catch (error) {
+        console.error('Error deleting photoes:', error);
+        return { response: 299, info: 'failed' }
+      }
     }
+    return { response: 200, info: 'success' };
+  }
 
   //end Hong's addition
+
+  function useExpenseAggregates() {
+    const [items, setItems] = useState<Array<Schema["Location"]["type"]>>([]);
+
+    useEffect(() => {
+      // Realtime query (updates when data changes)
+      const sub = client.models.Location.observeQuery({
+        // optional: add filter to limit what you pull down
+        // filter: { createdAt: { ge: "2025-12-01T00:00:00.000Z" } },
+      }).subscribe({
+        next: ({ items }) => setItems(items),
+        error: (err) => console.error(err),
+      });
+
+      return () => sub.unsubscribe();
+    }, []);
+
+    const aggregates = useMemo(() => {
+      const byCategory: ByCategory = {};
+      let totalSum = 0;
+
+      for (const e of items) {
+        const cat = e.track ?? "Uncategorized";
+        const amt = Number(e.length ?? 0);
+
+        totalSum += amt;
+
+        if (!byCategory[cat]) byCategory[cat] = { count: 0, sum: 0 };
+        byCategory[cat].count += 1;
+        byCategory[cat].sum += amt;
+      }
+
+      return { totalSum, byCategory, totalCount: items.length };
+    }, [items]);
+
+    return aggregates;
+  }
 
 
   return (
@@ -863,11 +906,11 @@ async function deleteLocation(id: string) {
 
 
                     <label>Place photos:</label><br />
-                    <input type="file" multiple 
-                     onChange={(e) => previewPhotos(e)}
-                     placeholder="new picture"
+                    <input type="file" multiple
+                      onChange={(e) => previewPhotos(e)}
+                      placeholder="new picture"
                     /><br />
-                    
+
                     <Button
                       onClick={(e) => {
                         console.log(clickInfo.properties);
@@ -947,36 +990,36 @@ async function deleteLocation(id: string) {
                         <TableCell as="th" /* style={{ width: '15%' }} */>Latitude</TableCell>
                         <TableCell as="th" /* style={{ width: '15%' }} */>Longitude</TableCell>
                       </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {location.map((location) => (
-                          <TableRow
-                            onDoubleClick={() =>{
-                                console.log( "location photos url =", location.photos)
-                                if ( location.photos)
-                                  deleteLocation2(location.id, location.photos)
-                                else 
-                                  deleteLocation(location.id)
-                            } 
+                    </TableHead>
+                    <TableBody>
+                      {location.map((location) => (
+                        <TableRow
+                          onDoubleClick={() => {
+                            console.log("location photos url =", location.photos)
+                            if (location.photos)
+                              deleteLocation2(location.id, location.photos)
+                            else
+                              deleteLocation(location.id)
+                          }
 
 
-                            }
-                            key={location.id}
-                          >
-                            <TableCell /* width="15%" */>{location.date}</TableCell>
-                            <TableCell /* width="15%" */>{location.time}</TableCell>
-                            <TableCell /* width="10%" */>{location.track}</TableCell>
-                            <TableCell /* width="15%" */>{location.type}</TableCell>
-                            <TableCell /* width="15%" */>{location.username}</TableCell>
-                            <TableCell /* width="15%" */>{location.diameter}</TableCell>
-                            <TableCell /* width="15%" */>{location.length}</TableCell>
-                            <TableCell /* width="15%" */>{location.photos? location.photos.length:0}</TableCell>
-                            <TableCell /* width="15%" */>{location.lat}</TableCell>
-                            <TableCell /* width="15%" */>{location.lng}</TableCell>  
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    
+                          }
+                          key={location.id}
+                        >
+                          <TableCell /* width="15%" */>{location.date}</TableCell>
+                          <TableCell /* width="15%" */>{location.time}</TableCell>
+                          <TableCell /* width="10%" */>{location.track}</TableCell>
+                          <TableCell /* width="15%" */>{location.type}</TableCell>
+                          <TableCell /* width="15%" */>{location.username}</TableCell>
+                          <TableCell /* width="15%" */>{location.diameter}</TableCell>
+                          <TableCell /* width="15%" */>{location.length}</TableCell>
+                          <TableCell /* width="15%" */>{location.photos ? location.photos.length : 0}</TableCell>
+                          <TableCell /* width="15%" */>{location.lat}</TableCell>
+                          <TableCell /* width="15%" */>{location.lng}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+
                   </Table>
                 </ThemeProvider>
               </ScrollView>
@@ -989,6 +1032,23 @@ async function deleteLocation(id: string) {
               <h3>Photos and Comments</h3>
               {renderPhotos()}
 
+            </>)
+          },
+          {
+            label: "Aggregates",
+            value: "4",
+            content: (<>
+              <div>
+                <h2>Total: {totalSum.toFixed(2)} ({totalCount} items)</h2>
+
+                <ul>
+                  {Object.entries(byCategory).map(([cat, v]) => (
+                    <li key={cat}>
+                      {cat}: {v.sum.toFixed(2)} ({v.count})
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </>)
           }
         ]}
