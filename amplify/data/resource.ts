@@ -15,7 +15,7 @@ const schema = a.schema({
     .model({
       date: a.date(), 
       time: a.time(), 
-      track: a.integer(),
+      track: a.string(),
       type: a.string(), 
       diameter: a.float(),
       length: a.float(), 
