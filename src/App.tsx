@@ -1026,7 +1026,7 @@ function App() {
             </>)
           },
           {
-            label: "Photos and Comments",
+            label: "Photos/Comments",
             value: "3",
             content: (<>
               <h3>Photos and Comments</h3>
@@ -1035,16 +1035,16 @@ function App() {
             </>)
           },
           {
-            label: "Aggregates",
+            label: "Statistics",
             value: "4",
             content: (<>
               <div>
-                <h2>Total: {totalSum.toFixed(2)} ({totalCount} items)</h2>
+                <h2>Total Length (per track in feet): {totalSum.toFixed(0)} ({totalCount} items)</h2>
 
                 <ul>
                   {Object.entries(byCategory).map(([cat, v]) => (
                     <li key={cat}>
-                      {cat}: {v.sum.toFixed(2)} ({v.count})
+                      {cat}:  {v.sum.toFixed(0)} feet ({v.count} in count)
                     </li>
                   ))}
                 </ul>
